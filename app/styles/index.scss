@@ -16,12 +16,14 @@ body {
 
 :root {
   --gradient-opacity: 0.8;
-  --primary-color: rgba(158, 117, 240, var(--gradient-opacity));
-  --secondary-color: rgba(138, 43, 226, var(--gradient-opacity));
-  --accent-color: rgba(128, 59, 239, var(--gradient-opacity));
-  // --primary-color: rgba(147, 112, 219, var(--gradient-opacity));
-  // --secondary-color: rgba(138, 43, 226, var(--gradient-opacity));
-  // --accent-color: rgba(180, 170, 220, var(--gradient-opacity));
+
+  --primary-color: rgba(59, 130, 246, var(--gradient-opacity)); /* Blue 500 #3b82f6 */
+  --secondary-color: rgba(250, 204, 21, var(--gradient-opacity)); /* Yellow 400 #facc15 */
+  --accent-color: rgba(37, 99, 235, var(--gradient-opacity)); /* Blue 600 #2563eb */
+
+  /* --primary-color: rgba(37, 99, 235, var(--gradient-opacity));   // deeper blue
+     --secondary-color: rgba(234, 179, 8, var(--gradient-opacity)); // richer yellow
+     --accent-color: rgba(59, 130, 246, var(--gradient-opacity));   // bright accent */
 }
 
 .modern-scrollbar {

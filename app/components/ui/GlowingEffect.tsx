@@ -80,16 +80,13 @@ const GlowingEffect = memo(
 
           const currentAngle = parseFloat(element.style.getPropertyValue('--start')) || 0;
           const targetAngle = (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) / Math.PI + 90;
-
           const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
           const newAngle = currentAngle + angleDiff;
 
           animate(currentAngle, newAngle, {
             duration: movementDuration,
             ease: [0.16, 1, 0.3, 1],
-            onUpdate: (value) => {
-              element.style.setProperty('--start', String(value));
-            },
+            onUpdate: (value) => element.style.setProperty('--start', String(value)),
           });
         });
       },
@@ -98,16 +95,14 @@ const GlowingEffect = memo(
 
     useEffect(() => {
       if (disabled) {
-        return undefined;
+        return () => {}; // always return a function
       }
 
       const handleScroll = () => handleMove();
       const handlePointerMove = (e: PointerEvent) => handleMove(e);
 
       window.addEventListener('scroll', handleScroll, { passive: true });
-      document.body.addEventListener('pointermove', handlePointerMove, {
-        passive: true,
-      });
+      document.body.addEventListener('pointermove', handlePointerMove, { passive: true });
 
       return () => {
         if (animationFrameRef.current) {
@@ -139,6 +134,8 @@ const GlowingEffect = memo(
               '--active': '0',
               '--glowingeffect-border-width': `${borderWidth}px`,
               '--repeating-conic-gradient-times': '5',
+
+              /* === 🔵🟡  Modhesh AI Gradient Palette === */
               '--gradient':
                 variant === 'white'
                   ? `repeating-conic-gradient(
@@ -146,24 +143,24 @@ const GlowingEffect = memo(
                       var(--black),
                       var(--black) calc(25% / var(--repeating-conic-gradient-times))
                     )`
-                  : `radial-gradient(circle, #9333ea 10%, #9333ea00 20%),
-                    radial-gradient(circle at 40% 40%, #a855f7 5%, #a855f700 15%),
-                    radial-gradient(circle at 60% 60%, #8b5cf6 10%, #8b5cf600 20%),
-                    radial-gradient(circle at 40% 60%, #f63bdd 10%, #3b82f600 20%),
+                  : `radial-gradient(circle, #3b82f6 10%, #3b82f600 20%),             /* Blue core */
+                    radial-gradient(circle at 40% 40%, #2563eb 5%, #2563eb00 15%),   /* Deep blue spot */
+                    radial-gradient(circle at 60% 60%, #60a5fa 10%, #60a5fa00 20%), /* Soft blue */
+                    radial-gradient(circle at 40% 60%, #facc15 10%, #facc1500 20%), /* Yellow blend */
                     repeating-conic-gradient(
                       from 236.84deg at 50% 50%,
-                      #9333ea 0%,
-                      #a855f7 calc(25% / var(--repeating-conic-gradient-times)),
-                      #8b5cf6 calc(50% / var(--repeating-conic-gradient-times)),
-                      #f63bdd calc(75% / var(--repeating-conic-gradient-times)),
-                      #9333ea calc(100% / var(--repeating-conic-gradient-times))
+                      #2563eb 0%,
+                      #3b82f6 calc(25% / var(--repeating-conic-gradient-times)),
+                      #60a5fa calc(50% / var(--repeating-conic-gradient-times)),
+                      #facc15 calc(75% / var(--repeating-conic-gradient-times)),
+                      #2563eb calc(100% / var(--repeating-conic-gradient-times))
                     )`,
             } as React.CSSProperties
           }
           className={classNames(
             'pointer-events-none absolute inset-0 rounded-[inherit] opacity-100 transition-opacity',
             glow && 'opacity-100',
-            blur > 0 && 'blur-[var(--blur)] ',
+            blur > 0 && 'blur-[var(--blur)]',
             className,
             disabled && '!hidden',
           )}
