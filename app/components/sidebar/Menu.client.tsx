@@ -14,6 +14,7 @@ import { useSearchFilter } from '~/lib/hooks/useSearchFilter';
 import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
 import { profileStore } from '~/lib/stores/profile';
+import { LocalizationButton } from '~/components/ui/LanguageSwitch';
 
 const menuVariants = {
   closed: {
@@ -528,6 +529,7 @@ export const Menu = () => {
           <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 px-4 py-3">
             <div className="flex items-center gap-3">
               <SettingsButton onClick={handleSettingsClick} />
+              <LocalizationButton></LocalizationButton>
             </div>
             <ThemeSwitch />
           </div>

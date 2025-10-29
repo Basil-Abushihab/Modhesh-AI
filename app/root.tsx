@@ -80,7 +80,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <ClientOnly>{() => <DndProvider backend={HTML5Backend}>{children}</DndProvider>}</ClientOnly>
+      <AuthProvider>
+        <I18nextProvider i18n={i18n}>
+          <ClientOnly>{() => <DndProvider backend={HTML5Backend}>{children}</DndProvider>}</ClientOnly>
+        </I18nextProvider>
+      </AuthProvider>
       <ToastContainer
         closeButton={({ closeToast }) => {
           return (
@@ -113,6 +117,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 import { logStore } from './lib/stores/logs';
+import { AuthProvider } from './lib/modules/auth/context/AuthContext';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 
 export default function App() {
   const theme = useStore(themeStore);
