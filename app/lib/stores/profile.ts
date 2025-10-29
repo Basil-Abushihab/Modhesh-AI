@@ -1,6 +1,7 @@
 import { atom } from 'nanostores';
 
 interface Profile {
+  lang: string;
   username: string;
   bio: string;
   avatar: string;

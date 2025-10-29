@@ -4,8 +4,10 @@ import { Dialog, DialogRoot, DialogClose, DialogTitle, DialogButton } from '~/co
 import { IconButton } from '~/components/ui/IconButton';
 import { useMCPStore } from '~/lib/stores/mcp';
 import McpServerList from '~/components/@settings/tabs/mcp/McpServerList';
+import { useTranslation } from 'react-i18next';
 
 export function McpTools() {
+  const { t } = useTranslation();
   const isInitialized = useMCPStore((state) => state.isInitialized);
   const serverTools = useMCPStore((state) => state.serverTools);
   const initialize = useMCPStore((state) => state.initialize);
@@ -29,7 +31,9 @@ export function McpTools() {
     try {
       await checkServersAvailabilities();
     } catch (e) {
-      setError(`Failed to check server availability: ${e instanceof Error ? e.message : String(e)}`);
+      setError(
+        `${t('chat.mcp_check_error', 'Failed to check server availability')}: ${e instanceof Error ? e.message : String(e)}`,
+      );
     } finally {
       setIsCheckingServers(false);
     }
@@ -39,9 +43,7 @@ export function McpTools() {
     setExpandedServer(expandedServer === serverName ? null : serverName);
   };
 
-  const handleDialogOpen = (open: boolean) => {
-    setIsDialogOpen(open);
-  };
+  const handleDialogOpen = (open: boolean) => setIsDialogOpen(open);
 
   const serverEntries = useMemo(() => Object.entries(serverTools), [serverTools]);
 
@@ -50,14 +52,14 @@ export function McpTools() {
       <div className="flex">
         <IconButton
           onClick={() => setIsDialogOpen(!isDialogOpen)}
-          title="MCP Tools Available"
+          title={t('chat.mcp_tools_available', 'MCP Tools Available')}
           disabled={!isInitialized}
           className="transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {!isInitialized ? (
-            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin"></div>
+            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin" />
           ) : (
-            <div className="i-bolt:mcp text-xl"></div>
+            <div className="i-bolt:mcp text-xl" />
           )}
         </IconButton>
       </div>
@@ -67,8 +69,8 @@ export function McpTools() {
           <Dialog className="max-w-4xl w-full p-6">
             <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
               <DialogTitle>
-                <div className="i-bolt:mcp text-xl"></div>
-                MCP tools
+                <div className="i-bolt:mcp text-xl" />
+                {t('chat.mcp_tools', 'MCP tools')}
               </DialogTitle>
 
               <div className="space-y-4">
@@ -91,9 +93,10 @@ export function McpTools() {
                       ) : (
                         <div className="i-ph:arrow-counter-clockwise w-3 h-3" />
                       )}
-                      Check availability
+                      {t('chat.check_availability', 'Check availability')}
                     </button>
                   </div>
+
                   {serverEntries.length > 0 ? (
                     <McpServerList
                       checkingServers={isCheckingServers}
@@ -104,19 +107,21 @@ export function McpTools() {
                     />
                   ) : (
                     <div className="py-4 text-center text-bolt-elements-textSecondary">
-                      <p>No MCP servers configured</p>
-                      <p className="text-xs mt-1">Configure servers in Settings → MCP Servers</p>
+                      <p>{t('chat.no_mcp_servers', 'No MCP servers configured')}</p>
+                      <p className="text-xs mt-1">
+                        {t('chat.configure_mcp_servers', 'Configure servers in Settings → MCP Servers')}
+                      </p>
                     </div>
                   )}
                 </div>
 
-                <div>{error && <p className="mt-2 text-sm text-bolt-elements-icon-error">{error}</p>}</div>
+                {error && <p className="mt-2 text-sm text-bolt-elements-icon-error">{error}</p>}
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
                 <div className="flex gap-2">
                   <DialogClose asChild>
-                    <DialogButton type="secondary">Close</DialogButton>
+                    <DialogButton type="secondary">{t('chat.close', 'Close')}</DialogButton>
                   </DialogClose>
                 </div>
               </div>

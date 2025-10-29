@@ -1,7 +1,3 @@
-/*
- * @ts-nocheck
- * Preventing TS checks with files presented in the video for a better presentation.
- */
 import type { JSONValue, Message } from 'ai';
 import React, { type RefCallback, useEffect, useState } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
@@ -33,6 +29,7 @@ import { ChatBox } from './ChatBox';
 import type { DesignScheme } from '~/types/design-scheme';
 import type { ElementInfo } from '~/components/workbench/Inspector';
 import LlmErrorAlert from './LLMApiAlert';
+import { useTranslation } from 'react-i18next';
 
 const TEXTAREA_MIN_HEIGHT = 76;
 
@@ -99,8 +96,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       input = '',
       enhancingPrompt,
       handleInputChange,
-
-      // promptEnhanced,
       enhancePrompt,
       sendMessage,
       handleStop,
@@ -133,13 +128,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
+
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>(getApiKeysFromCookies());
     const [modelList, setModelList] = useState<ModelInfo[]>([]);
     const [isModelSettingsCollapsed, setIsModelSettingsCollapsed] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
-    const [transcript, setTranscript] = useState('');
     const [isModelLoading, setIsModelLoading] = useState<string | undefined>('all');
     const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
     const expoUrl = useStore(expoUrlAtom);
@@ -159,13 +155,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         setProgressAnnotations(progressList);
       }
     }, [data]);
-    useEffect(() => {
-      console.log(transcript);
-    }, [transcript]);
 
-    useEffect(() => {
-      onStreamingChange?.(isStreaming);
-    }, [isStreaming, onStreamingChange]);
+    useEffect(() => onStreamingChange?.(isStreaming), [isStreaming, onStreamingChange]);
 
     useEffect(() => {
       if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
@@ -180,7 +171,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             .map((result) => result.transcript)
             .join('');
 
-          setTranscript(transcript);
 
           if (handleInputChange) {
             const syntheticEvent = {
@@ -201,10 +191,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     useEffect(() => {
       if (typeof window !== 'undefined') {
-        let parsedApiKeys: Record<string, string> | undefined = {};
-
         try {
-          parsedApiKeys = getApiKeysFromCookies();
+          const parsedApiKeys = getApiKeysFromCookies();
           setApiKeys(parsedApiKeys);
         } catch (error) {
           console.error('Error loading API keys from cookies:', error);
@@ -213,17 +201,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
         setIsModelLoading('all');
         fetch('/api/models')
-          .then((response) => response.json())
-          .then((data) => {
-            const typedData = data as { modelList: ModelInfo[] };
-            setModelList(typedData.modelList);
-          })
-          .catch((error) => {
-            console.error('Error fetching model list:', error);
-          })
-          .finally(() => {
-            setIsModelLoading(undefined);
-          });
+          .then((res) => res.json())
+          .then((data) => setModelList((data as { modelList: ModelInfo[] }).modelList))
+          .catch(console.error)
+          .finally(() => setIsModelLoading(undefined));
       }
     }, [providerList, provider]);
 
@@ -244,7 +225,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         console.error('Error loading dynamic models for:', providerName, error);
       }
 
-      // Only update models for the specific provider
       setModelList((prevModels) => {
         const otherModels = prevModels.filter((model) => model.provider !== providerName);
         return [...otherModels, ...providerModels];
@@ -252,19 +232,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       setIsModelLoading(undefined);
     };
 
-    const startListening = () => {
-      if (recognition) {
-        recognition.start();
-        setIsListening(true);
-      }
-    };
-
-    const stopListening = () => {
-      if (recognition) {
-        recognition.stop();
-        setIsListening(false);
-      }
-    };
+    const startListening = () => recognition && (recognition.start(), setIsListening(true));
+    const stopListening = () => recognition && (recognition.stop(), setIsListening(false));
 
     const handleSendMessage = (event: React.UIEvent, messageInput?: string) => {
       if (sendMessage) {
@@ -272,11 +241,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         setSelectedElement?.(null);
 
         if (recognition) {
-          recognition.abort(); // Stop current recognition
-          setTranscript(''); // Clear transcript
+          recognition.abort();
           setIsListening(false);
 
-          // Clear the input by triggering handleInputChange with empty value
           if (handleInputChange) {
             const syntheticEvent = {
               target: { value: '' },
@@ -295,18 +262,19 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       input.onchange = async (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
 
-        if (file) {
-          const reader = new FileReader();
-
-          reader.onload = (e) => {
-            const base64Image = e.target?.result as string;
-            setUploadedFiles?.([...uploadedFiles, file]);
-            setImageDataList?.([...imageDataList, base64Image]);
-          };
-          reader.readAsDataURL(file);
+        if (!file) {
+          return;
         }
-      };
 
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          const base64Image = e.target?.result as string;
+          setUploadedFiles?.([...uploadedFiles, file]);
+          setImageDataList?.([...imageDataList, base64Image]);
+        };
+        reader.readAsDataURL(file);
+      };
       input.click();
     };
 
@@ -323,17 +291,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
           const file = item.getAsFile();
 
-          if (file) {
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-              const base64Image = e.target?.result as string;
-              setUploadedFiles?.([...uploadedFiles, file]);
-              setImageDataList?.([...imageDataList, base64Image]);
-            };
-            reader.readAsDataURL(file);
+          if (!file) {
+            continue;
           }
 
+          const reader = new FileReader();
+
+          reader.onload = (e) => {
+            const base64Image = e.target?.result as string;
+            setUploadedFiles?.([...uploadedFiles, file]);
+            setImageDataList?.([...imageDataList, base64Image]);
+          };
+          reader.readAsDataURL(file);
           break;
         }
       }
@@ -351,13 +320,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             {!chatStarted && (
               <div id="intro" className="mt-[16vh] max-w-2xl mx-auto text-center px-4 lg:px-0">
                 <h1 className="text-3xl lg:text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in">
-                  Where ideas begin
+                  {t('chat.where_ideas_begin')}
                 </h1>
                 <p className="text-md lg:text-xl mb-8 text-bolt-elements-textSecondary animate-fade-in animation-delay-200">
-                  Bring ideas to life in seconds or get help on existing projects.
+                  {t('chat.bring_ideas_to_life')}
                 </p>
               </div>
             )}
+
             <StickToBottom
               className={classNames('pt-6 px-2 sm:px-6 relative', {
                 'h-full flex flex-col modern-scrollbar': chatStarted,
@@ -365,10 +335,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               resize="smooth"
               initial="smooth"
             >
-              <StickToBottom.Content className="flex flex-col gap-4 relative ">
+              <StickToBottom.Content className="flex flex-col gap-4 relative">
                 <ClientOnly>
-                  {() => {
-                    return chatStarted ? (
+                  {() =>
+                    chatStarted ? (
                       <Messages
                         className="flex flex-col w-full flex-1 max-w-chat pb-4 mx-auto z-1"
                         messages={messages}
@@ -380,11 +350,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         model={model}
                         addToolResult={addToolResult}
                       />
-                    ) : null;
-                  }}
+                    ) : null
+                  }
                 </ClientOnly>
-                <ScrollToBottom />
+                <ScrollToBottom t={t} />
               </StickToBottom.Content>
+
               <div
                 className={classNames('my-auto flex flex-col gap-2 w-full max-w-chat mx-auto z-prompt mb-6', {
                   'sticky bottom-2': chatStarted,
@@ -395,9 +366,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <DeployChatAlert
                       alert={deployAlert}
                       clearAlert={() => clearDeployAlert?.()}
-                      postMessage={(message: string | undefined) => {
-                        sendMessage?.({} as any, message);
-                        clearSupabaseAlert?.();
+                      postMessage={function (): void {
+                        throw new Error('Function not implemented.');
                       }}
                     />
                   )}
@@ -405,9 +375,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <SupabaseChatAlert
                       alert={supabaseAlert}
                       clearAlert={() => clearSupabaseAlert?.()}
-                      postMessage={(message) => {
-                        sendMessage?.({} as any, message);
-                        clearSupabaseAlert?.();
+                      postMessage={function (): void {
+                        throw new Error('Function not implemented.');
                       }}
                     />
                   )}
@@ -415,9 +384,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <ChatAlert
                       alert={actionAlert}
                       clearAlert={() => clearAlert?.()}
-                      postMessage={(message) => {
-                        sendMessage?.({} as any, message);
-                        clearAlert?.();
+                      postMessage={function (): void {
+                        throw new Error('Function not implemented.');
                       }}
                     />
                   )}
@@ -468,27 +436,35 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 />
               </div>
             </StickToBottom>
+
             <div className="flex flex-col justify-center">
               {!chatStarted && (
                 <div className="flex justify-center gap-2">
-                  {ImportButtons(importChat)}
+                  <ImportButtons importChat={importChat} />
                   <GitCloneButton importChat={importChat} />
                 </div>
               )}
-              <div className="flex flex-col gap-5">
-                {!chatStarted &&
-                  ExamplePrompts((event, messageInput) => {
-                    if (isStreaming) {
-                      handleStop?.();
-                      return;
-                    }
 
-                    handleSendMessage?.(event, messageInput);
-                  })}
+              <div className="flex flex-col gap-5">
+                {!chatStarted && (
+                  <ExamplePrompts
+                    sendMessage={(message) => {
+                      if (isStreaming) {
+                        handleStop?.();
+                        return;
+                      }
+
+                      // Create a fake event (or null)
+                      handleSendMessage?.(null as any, message);
+                    }}
+                  />
+                )}
+
                 {!chatStarted && <StarterTemplates />}
               </div>
             </div>
           </div>
+
           <ClientOnly>
             {() => (
               <Workbench chatStarted={chatStarted} isStreaming={isStreaming} setSelectedElement={setSelectedElement} />
@@ -502,7 +478,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   },
 );
 
-function ScrollToBottom() {
+function ScrollToBottom({ t }: { t: any }) {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
 
   return (
@@ -513,7 +489,7 @@ function ScrollToBottom() {
           className="sticky z-50 bottom-0 left-0 right-0 text-4xl rounded-lg px-1.5 py-0.5 flex items-center justify-center mx-auto gap-2 bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor text-bolt-elements-textPrimary text-sm"
           onClick={() => scrollToBottom()}
         >
-          Go to last message
+          {t('chat.go_to_last_message')}
           <span className="i-ph:arrow-down animate-bounce" />
         </button>
       </>

@@ -1,14 +1,19 @@
 import { useStore } from '@nanostores/react';
 import { localeStore, type Locale } from '~/lib/stores/locale';
 import { Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const LocalizationButton = () => {
   const locale = useStore(localeStore);
+  const { i18n } = useTranslation();
 
   const toggleLocale = () => {
     const newLocale: Locale = locale === 'en' ? 'ar' : 'en';
     localeStore.set(newLocale);
     localStorage.setItem('lng', newLocale);
+
+    // Tell i18next to switch language immediately
+    i18n.changeLanguage(newLocale);
   };
 
   return (
